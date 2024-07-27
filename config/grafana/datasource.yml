@@ -1,8 +1,8 @@
 datasources:
 -  access: 'proxy'
-   editable: true
+   editable: false
    is_default: true
-   name: 'node'
+   name: 'server'
    org_id: 1
    type: 'prometheus'
    url: 'http://vm-prometheus:9090'

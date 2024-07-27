@@ -4,8 +4,6 @@ services:
     image: quay.io/prometheus/node-exporter:latest
     container_name: vm-node-exporter
     restart: unless-stopped
-    depends_on:
-      - prometheus
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -22,18 +20,32 @@ services:
     networks:
       - monitorer
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter
+    container_name: vm-nginx-exporter
+    restart: unless-stopped
+    command:
+      - '--nginx.scrape-uri=http://bangunsite:8000/api/server/nginx'
+    expose:
+      - 9113
+    networks:
+      - monitorer
+
   prometheus:
-      image: prom/prometheus:latest
-      container_name: vm-prometheus
-      restart: unless-stopped
-      volumes:
-        - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      command:
-        - '--config.file=/etc/prometheus/prometheus.yml'
-      expose:
-        - 9090
-      networks:
-        - monitorer
+    image: prom/prometheus:latest
+    container_name: vm-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - node-exporter
+      - nginx-exporter
+    expose:
+      - 9090
+    networks:
+      - monitorer
 
   grafana:
     image: grafana/grafana
@@ -51,6 +63,7 @@ services:
     volumes:
       - ./data/grafana/lib:/var/lib/grafana:rw
       - ./config/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json
+      - ./config/grafana/nginx.json:/var/lib/grafana/dashboards/nginx.json
       - ./config/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
       - ./config/grafana/datasource.yml:/etc/grafana/provisioning/datasources/dashboard.yml
     ports:
